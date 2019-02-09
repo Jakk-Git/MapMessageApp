@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MapMessageApp</string>
+    <string name="title_activity_map_list">MapListActivity</string>
 </resources>
