@@ -36,9 +36,15 @@
             </intent-filter>
         </activity>
 
+        <receiver android:name=".MapListActivity$receiveProximityChange">
+            <intent-filter>
+                <action android:name="leftdistance"></action>
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyA83CVgbkctVGow2hsbeYgH24-EZ3uRzEg" />
+            android:value="//" />
     </application>
 
 </manifest>

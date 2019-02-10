@@ -15,14 +15,14 @@ import org.json.JSONException;
 public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.MyViewHolder> {
 
 
-    private JSONArray personlist;
+    private Partner[] personlist;
     Context activitycontext;
 
-    public JSONArray getTourlist() {
+    public Partner[] getTourlist() {
         return personlist;
     }
 
-    public void setTourlist(JSONArray tourlist) {
+    public void setTourlist(Partner[] tourlist) {
         this.personlist = tourlist;
     }
 
@@ -36,15 +36,15 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
         }
     }
 
-    public PersonListAdapter(JSONArray tourlist, Context activitycontext)
+    public PersonListAdapter(Partner[] personlist, Context activitycontext)
     {
-        this.personlist = tourlist;
+        this.personlist = personlist;
         this.activitycontext = activitycontext;
     }
 
     @Override
     public int getItemCount() {
-        return personlist.length();
+        return personlist.length;
     }
 
 
@@ -63,10 +63,10 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
     @Override
     public void onBindViewHolder(MyViewHolder holder, final int position) {
         final int tempposition = position;
-        try {
-            if(personlist.get(position) != null) {
-                holder.tourname.setText(personlist.getJSONObject(position).getString("username"));
-                holder.tourname.setOnClickListener(new OnClickListener() {
+        if(personlist[position] != null)
+        {
+            holder.tourname.setText(personlist[position].name);
+            holder.tourname.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         MapListActivity tempcallactivity = (MapListActivity) activitycontext;
@@ -76,10 +76,6 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
                     }
                 });
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
     }
 
 
