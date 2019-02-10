@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -63,12 +64,16 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
     Timer updatepeople = new Timer();
     TimerTask timerupdate;
     final String NAME_OF_USER = "aslfnaklrjgnogkgb;flkgmh";
+    PendingIntent mainpend;
+    Boolean hasusername = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_list);
         getGoogleMapReady();
+        mainpend = PendingIntent.getBroadcast(this, 0, new Intent("leftdistance"), PendingIntent.FLAG_NO_CREATE);
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         if(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME").compareTo("NOT_A_USERNAME") == 0)
         {
@@ -82,6 +87,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
                     Log.d("LOOK", entername.getText().toString());
                     sendUserDataToServer(entername.getText().toString());
                     submitname.setClickable(false);
+                    hasusername = true;
 
 
                 }
@@ -90,6 +96,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         }
         else
         {
+            hasusername = true;
 
         }
         createTimer();
@@ -121,7 +128,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         StringRequest jor = new StringRequest(Request.Method.POST,"https://kamorris.com/lab/register_location.php",  new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                Log.d("RESPONSE", response);
+                Toast.makeText(getApplicationContext(), "SENT, RESPONSE FROM SERVER: " + response, Toast.LENGTH_LONG).show();
             }
 
         }, new Response.ErrorListener() {
@@ -160,8 +167,14 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            location = locationmanager.getLastKnownLocation(locationmanager.getBestProvider(new Criteria(), false));
-            sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+
+           String key = LocationManager.KEY_PROXIMITY_ENTERING;
+           Boolean entering = intent.getBooleanExtra(key, false);
+            if (!entering) {
+                updateLocation();
+                locationmanager.addProximityAlert(location.getLatitude(), location.getLongitude(), 10, -1, mainpend);
+                sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+            }
 
         }
     }
@@ -178,20 +191,23 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         {
 
             currentmap.setMyLocationEnabled(true);
-            Criteria criteria = new Criteria();
             locationmanager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            String provider = locationmanager.getBestProvider(criteria, false);
-            location = locationmanager.getLastKnownLocation(provider);
+            updateLocation();
+            //sending user data to server
+            sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
             double lat = location.getLatitude();
             double lng = location.getLongitude();
-            Intent distanceintent = new Intent("leftdistance");
-            PendingIntent mainpend = PendingIntent.getBroadcast(this, 0, distanceintent, PendingIntent.FLAG_CANCEL_CURRENT);
             locationmanager.addProximityAlert(lat, lng, 10, -1, mainpend);
             LatLng coordinate = new LatLng(lat, lng);
 
             CameraUpdate zoom = CameraUpdateFactory.newLatLngZoom(coordinate, 15);
             currentmap.animateCamera(zoom);
         }
+    }
+
+    public void updateLocation()
+    {
+        location = locationmanager.getLastKnownLocation(locationmanager.getBestProvider(new Criteria(), false));
     }
 
     public void createTimer()
@@ -203,6 +219,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
 
             public void updateRecyclerView() throws JSONException {
                  partnerlist = new Partner[peoplelist.length()];
+                 updateLocation();
                 for(int i = 0; i < peoplelist.length(); i++)
                 {
                         partnerlist[i] = new Partner(peoplelist.getJSONObject(i), location);
