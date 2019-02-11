@@ -73,7 +73,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_list);
         getGoogleMapReady();
-        mainpend = PendingIntent.getBroadcast(this, 0, new Intent("leftdistance"), PendingIntent.FLAG_NO_CREATE);
+        mainpend = PendingIntent.getBroadcast(this, 0, new Intent("leftdistance"), PendingIntent.FLAG_UPDATE_CURRENT);
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         if(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME").compareTo("NOT_A_USERNAME") == 0)
         {
@@ -172,8 +172,11 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
            Boolean entering = intent.getBooleanExtra(key, false);
             if (!entering) {
                 updateLocation();
-                locationmanager.addProximityAlert(location.getLatitude(), location.getLongitude(), 10, -1, mainpend);
-                sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+                locationmanager.removeProximityAlert(mainpend);
+                locationmanager.addProximityAlert(location.getLatitude(), location.getLongitude(), 1, -1, mainpend);
+                if(hasusername) {
+                    sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+                }
             }
 
         }
@@ -194,10 +197,12 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             locationmanager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             updateLocation();
             //sending user data to server
-            sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
+            if(hasusername) {
+                sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
+            }
             double lat = location.getLatitude();
             double lng = location.getLongitude();
-            locationmanager.addProximityAlert(lat, lng, 10, -1, mainpend);
+            locationmanager.addProximityAlert(lat, lng, 1, -1, mainpend);
             LatLng coordinate = new LatLng(lat, lng);
 
             CameraUpdate zoom = CameraUpdateFactory.newLatLngZoom(coordinate, 15);

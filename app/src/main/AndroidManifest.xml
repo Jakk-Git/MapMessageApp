@@ -36,7 +36,8 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".MapListActivity$receiveProximityChange">
+        <receiver android:name=".MapListActivity$receiveProximityChange"
+            android:enabled="true">
             <intent-filter>
                 <action android:name="leftdistance"></action>
             </intent-filter>

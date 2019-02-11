@@ -12,6 +12,7 @@ public class Partner implements Comparable {
     double latitude;
     double longitude;
     Location mylocation;
+    Location thislocation;
 
     public Partner(JSONObject myobject, Location mylocation) throws JSONException {
         name = myobject.getString("username");
@@ -23,10 +24,17 @@ public class Partner implements Comparable {
     @Override
     public int compareTo(@NonNull Object o) {
         Partner p = (Partner)o;
-        if(Math.abs(getTotalLatLong(latitude, longitude) - getTotalLatLong(mylocation.getLatitude(), mylocation.getLongitude()))
-            > Math.abs(Math.abs(getTotalLatLong(p.latitude, p.longitude) - getTotalLatLong(mylocation.getLatitude(), mylocation.getLongitude()))))
+        float[] thisdistance = new float[10];
+        float[] thatdistance = new float[10];
+        mylocation.distanceBetween(mylocation.getLatitude(), mylocation.getLongitude(), latitude, longitude, thisdistance);
+        mylocation.distanceBetween(mylocation.getLatitude(), mylocation.getLongitude(), p.latitude, p.longitude, thatdistance);
+        if( thisdistance[0] > thatdistance[0])
         {
             return 1;
+        }
+        else if(thisdistance[0] == thatdistance[0])
+        {
+            return 0;
         }
         else
         {
