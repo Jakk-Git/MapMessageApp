@@ -9,11 +9,13 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -64,16 +66,13 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
     Timer updatepeople = new Timer();
     TimerTask timerupdate;
     final String NAME_OF_USER = "aslfnaklrjgnogkgb;flkgmh";
-    PendingIntent mainpend;
     Boolean hasusername = false;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_list);
         getGoogleMapReady();
-        mainpend = PendingIntent.getBroadcast(this, 0, new Intent("leftdistance"), PendingIntent.FLAG_UPDATE_CURRENT);
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         if(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME").compareTo("NOT_A_USERNAME") == 0)
         {
@@ -99,7 +98,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             hasusername = true;
 
         }
-        createTimer();
+
 
 
 
@@ -121,7 +120,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         data.put("latitude", Double.toString(location.getLatitude()));
         data.put("longitude", Double.toString(location.getLongitude()));
 
-        Log.d("CHECKING", data.toString());
+
 
 
 
@@ -129,6 +128,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             @Override
             public void onResponse(String response) {
                 Toast.makeText(getApplicationContext(), "SENT, RESPONSE FROM SERVER: " + response, Toast.LENGTH_LONG).show();
+                Log.d("CHECKING", data.toString());
             }
 
         }, new Response.ErrorListener() {
@@ -162,25 +162,25 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
 
     }
 
-    public class receiveProximityChange extends BroadcastReceiver
-    {
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-           String key = LocationManager.KEY_PROXIMITY_ENTERING;
-           Boolean entering = intent.getBooleanExtra(key, false);
-            if (!entering) {
-                updateLocation();
-                locationmanager.removeProximityAlert(mainpend);
-                locationmanager.addProximityAlert(location.getLatitude(), location.getLongitude(), 1, -1, mainpend);
-                if(hasusername) {
-                    sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
-                }
-            }
-
-        }
-    }
+//    public class ReceiveProximityChanger extends BroadcastReceiver
+//    {
+//
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//           String key = LocationManager.KEY_PROXIMITY_ENTERING;
+//           Boolean entering = intent.getBooleanExtra(key, false);
+//            if (!entering) {
+//                updateLocation();
+//                locationmanager.removeProximityAlert(mainpend);
+//                locationmanager.addProximityAlert(location.getLatitude(), location.getLongitude(), 10, -1, mainpend);
+//                if(hasusername) {
+//                    sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+//                }
+//            }
+//
+//        }
+//    }
 
     public void centerMap()
     {
@@ -202,11 +202,37 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             }
             double lat = location.getLatitude();
             double lng = location.getLongitude();
-            locationmanager.addProximityAlert(lat, lng, 1, -1, mainpend);
+            locationmanager.requestLocationUpdates(
+                    locationmanager.getBestProvider(new Criteria(), false)
+                    , 0, 10, new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    updateLocation();
+                    if(hasusername) {
+                        sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+                    }
+                }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+                    //do nothing
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+                    //do nothing
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+                    //do nothing
+                }
+            });
             LatLng coordinate = new LatLng(lat, lng);
 
             CameraUpdate zoom = CameraUpdateFactory.newLatLngZoom(coordinate, 15);
             currentmap.animateCamera(zoom);
+            createTimer();
         }
     }
 

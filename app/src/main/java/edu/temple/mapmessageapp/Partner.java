@@ -19,22 +19,20 @@ public class Partner implements Comparable {
         latitude = myobject.getDouble("latitude");
         longitude = myobject.getDouble("longitude");
         this.mylocation = mylocation;
+        this.thislocation = new Location("thisLocation");
+        this.thislocation.setLatitude(latitude);
+        this.thislocation.setLongitude(longitude);
     }
 
     @Override
     public int compareTo(@NonNull Object o) {
         Partner p = (Partner)o;
-        float[] thisdistance = new float[10];
-        float[] thatdistance = new float[10];
-        mylocation.distanceBetween(mylocation.getLatitude(), mylocation.getLongitude(), latitude, longitude, thisdistance);
-        mylocation.distanceBetween(mylocation.getLatitude(), mylocation.getLongitude(), p.latitude, p.longitude, thatdistance);
-        if( thisdistance[0] > thatdistance[0])
+        Location thatlocation = new Location("thatLocation");
+        thatlocation.setLongitude(p.longitude);
+        thatlocation.setLatitude(p.latitude);
+        if(Math.abs(mylocation.distanceTo(thislocation)) > Math.abs(mylocation.distanceTo(thatlocation)))
         {
             return 1;
-        }
-        else if(thisdistance[0] == thatdistance[0])
-        {
-            return 0;
         }
         else
         {
