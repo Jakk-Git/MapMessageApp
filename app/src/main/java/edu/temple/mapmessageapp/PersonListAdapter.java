@@ -28,11 +28,11 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
 
 
     public static class MyViewHolder extends RecyclerView.ViewHolder {
-        public TextView tourname;
+        public TextView personname;
         public MyViewHolder(TextView v) {
 
             super(v);
-            tourname = v;
+            personname = v;
         }
     }
 
@@ -65,8 +65,8 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
         final int tempposition = position;
         if(personlist[position] != null)
         {
-            holder.tourname.setText(personlist[position].name);
-            holder.tourname.setOnClickListener(new OnClickListener() {
+            holder.personname.setText(personlist[position].name);
+            holder.personname.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         MapListActivity tempcallactivity = (MapListActivity) activitycontext;

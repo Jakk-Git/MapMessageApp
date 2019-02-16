@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -15,8 +16,12 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -67,15 +72,28 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
     TimerTask timerupdate;
     final String NAME_OF_USER = "aslfnaklrjgnogkgb;flkgmh";
     Boolean hasusername = false;
+    FragmentStatePagerAdapter fspa1;
+    FragmentStatePagerAdapter fspa2;
+
+    RecyclerFragment rf;
+
+    ViewPager vp;
+    ViewPager vp2;
+    SupportMapFragment smf;
+    FragmentManager fm = getSupportFragmentManager();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_list);
+        rf = new RecyclerFragment();
+        smf = SupportMapFragment.newInstance();
+        vp = findViewById(R.id.myviewPager);
+        setUpFragments();
         getGoogleMapReady();
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        if(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME").compareTo("NOT_A_USERNAME") == 0)
-        {
+        if (preferences.getString(NAME_OF_USER, "NOT_A_USERNAME").compareTo("NOT_A_USERNAME") == 0) {
             final Button submitname = findViewById(R.id.submitname);
             submitname.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -92,28 +110,92 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
                 }
             });
 
-        }
-        else
-        {
+        } else {
             hasusername = true;
 
         }
 
 
+    }
 
 
+    public void setUpFragments()
+    {
+        if(findViewById(R.id.framesecond) == null || getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE)
+        {
+           fspa1 = new FragmentStatePagerAdapter(fm) {
+                @Override
+                public Fragment getItem(int position) {
+                    if(position == 0)
+                    {
+                        return rf;
+                    }
+                    else if(position == 1)
+                    {
+                        return smf;
+                    }
+                    else
+                    {
+                        return rf;
+                    }
+                }
+
+                @Override
+                public int getCount() {
+                    return 2;
+                }
+            };
+            vp.setAdapter(fspa1);
+            vp.setCurrentItem(0);
+        }
+        else
+        {
+            fspa1 = new FragmentStatePagerAdapter(fm) {
+            @Override
+            public Fragment getItem(int position) {
+                return rf;
+            }
+
+            @Override
+            public int getCount() {
+                return 1;
+            }
+        };
+            fspa2 = new FragmentStatePagerAdapter(fm) {
+                @Override
+                public Fragment getItem(int position) {
+                    return smf;
+                }
+
+                @Override
+                public int getCount() {
+                    return 1;
+                }
+            };
 
 
+            vp.setAdapter(fspa1);
+            vp2 = findViewById(R.id.framesecond);
+            vp2.setAdapter(fspa2);
+            vp.setCurrentItem(0);
+            vp2.setCurrentItem(0);
+
+        }
     }
 
     @Override
     protected void onDestroy() {
-        timerupdate.cancel();
         super.onDestroy();
+        //updatepeople.cancel();
     }
 
-    public void sendUserDataToServer(String name)
-    {
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+    }
+
+    public void sendUserDataToServer(String name) {
         RequestQueue rq = Volley.newRequestQueue(getApplicationContext());
         final Map<String, String> data = new HashMap<String, String>();
         data.put("user", name);
@@ -121,13 +203,9 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         data.put("longitude", Double.toString(location.getLongitude()));
 
 
-
-
-
-        StringRequest jor = new StringRequest(Request.Method.POST,"https://kamorris.com/lab/register_location.php",  new Response.Listener<String>() {
+        StringRequest jor = new StringRequest(Request.Method.POST, "https://kamorris.com/lab/register_location.php", new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                Toast.makeText(getApplicationContext(), "SENT, RESPONSE FROM SERVER: " + response, Toast.LENGTH_LONG).show();
                 Log.d("CHECKING", data.toString());
             }
 
@@ -136,7 +214,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             public void onErrorResponse(VolleyError error) {
                 Log.d("ERROR", error.toString());
             }
-        }){
+        }) {
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
 
@@ -148,10 +226,9 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         rq.add(jor);
     }
 
-    public void getGoogleMapReady()
-    {
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+    public void getGoogleMapReady() {
+        //SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        smf.getMapAsync(this);
     }
 
     @Override
@@ -182,22 +259,19 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
 //        }
 //    }
 
-    public void centerMap()
-    {
+    public void centerMap() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED )
-        {
+                != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
             centerMap();
-        }
-        else
-        {
+        } else {
 
             currentmap.setMyLocationEnabled(true);
+
             locationmanager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             updateLocation();
             //sending user data to server
-            if(hasusername) {
+            if (hasusername) {
                 sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
             }
             double lat = location.getLatitude();
@@ -205,29 +279,29 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             locationmanager.requestLocationUpdates(
                     locationmanager.getBestProvider(new Criteria(), false)
                     , 0, 10, new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    updateLocation();
-                    if(hasusername) {
-                        sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
-                    }
-                }
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            updateLocation();
+                            if (hasusername) {
+                                sendUserDataToServer(preferences.getString(NAME_OF_USER, "NOT_A_USERNAME"));
+                            }
+                        }
 
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-                    //do nothing
-                }
+                        @Override
+                        public void onStatusChanged(String provider, int status, Bundle extras) {
+                            //do nothing
+                        }
 
-                @Override
-                public void onProviderEnabled(String provider) {
-                    //do nothing
-                }
+                        @Override
+                        public void onProviderEnabled(String provider) {
+                            //do nothing
+                        }
 
-                @Override
-                public void onProviderDisabled(String provider) {
-                    //do nothing
-                }
-            });
+                        @Override
+                        public void onProviderDisabled(String provider) {
+                            //do nothing
+                        }
+                    });
             LatLng coordinate = new LatLng(lat, lng);
 
             CameraUpdate zoom = CameraUpdateFactory.newLatLngZoom(coordinate, 15);
@@ -236,8 +310,17 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
-    public void updateLocation()
-    {
+    public void updateLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         location = locationmanager.getLastKnownLocation(locationmanager.getBestProvider(new Criteria(), false));
     }
 
@@ -257,12 +340,18 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
 
                 }
                 Arrays.sort(partnerlist);
-                RecyclerView rv = findViewById(R.id.recyclerView2);
-                PersonListAdapter personList = new PersonListAdapter(partnerlist, getApplicationContext());
-                LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext());
-                rv.setAdapter(personList);
-                rv.setLayoutManager(llm);
-                rv.hasFixedSize();
+                Log.d("TAGGED", "GOT TO UPDATERECYCLER");
+                RecyclerView recycletemp = findViewById(R.id.myrecycler);
+                rf.setReyclerView(recycletemp);
+                if(rf.getRecyclerView() != null)
+                {
+                    PersonListAdapter personList = new PersonListAdapter(partnerlist, getApplicationContext());
+                    LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext());
+                    rf.getRecyclerView().setAdapter(personList);
+                    rf.getRecyclerView().setLayoutManager(llm);
+                    rf.getRecyclerView().setHasFixedSize(true);
+                }
+
             }
 
             public void updateMap()
