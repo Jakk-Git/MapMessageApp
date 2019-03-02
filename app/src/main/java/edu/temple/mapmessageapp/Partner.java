@@ -16,8 +16,8 @@ public class Partner implements Comparable {
 
     public Partner(JSONObject myobject, Location mylocation) throws JSONException {
         name = myobject.getString("username");
-        latitude = myobject.getDouble("latitude");
-        longitude = myobject.getDouble("longitude");
+        latitude = Double.parseDouble(myobject.getString("latitude"));
+        longitude = Double.parseDouble(myobject.getString("longitude"));
         this.mylocation = mylocation;
         this.thislocation = new Location("thisLocation");
         this.thislocation.setLatitude(latitude);
@@ -33,6 +33,10 @@ public class Partner implements Comparable {
         if(Math.abs(mylocation.distanceTo(thislocation)) > Math.abs(mylocation.distanceTo(thatlocation)))
         {
             return 1;
+        }
+        else if (Math.abs(mylocation.distanceTo(thislocation)) == Math.abs(mylocation.distanceTo(thatlocation)))
+        {
+            return 0;
         }
         else
         {

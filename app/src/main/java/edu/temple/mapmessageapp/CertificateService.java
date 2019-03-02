@@ -109,8 +109,8 @@ public class CertificateService extends Service {
         KeyGenParameterSpec kgps = new KeyGenParameterSpec.Builder
                 (KEY_PAIR, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_SIGN)
                 .setUserAuthenticationRequired(false)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
-                .setRandomizedEncryptionRequired(true)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(false)
                 .build();
         kpg.initialize(kgps);
         mykp = kpg.generateKeyPair();
