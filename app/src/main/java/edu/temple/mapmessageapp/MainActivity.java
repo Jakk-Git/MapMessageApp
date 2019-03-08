@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     ServiceConnection sc;
     Intent i;
+    Intent i2;
     PendingIntent pi;
     CertificateService certbind = new CertificateService();
     NfcAdapter nfc;
@@ -70,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
     Boolean isConnected = false;
     sendKeyCallback mainsender;
     String lastUserKeyExchanged;
+    String name = "DEFAULT";
+    KeyPair mykeypair;
 
 
 
@@ -84,7 +88,9 @@ public class MainActivity extends AppCompatActivity {
         changemode.setOnClickListener(new KeyExchangeModeListener());
         i = new Intent(this, CertificateService.class);
         i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        pi = PendingIntent.getActivity(this, 0, i, 0);
+        i2 = new Intent(this, MainActivity.class);
+        i2.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        pi = PendingIntent.getActivity(this, 0, i2, 0);
         nfc = NfcAdapter.getDefaultAdapter(this);
         sc = new ServiceConnection() {
             @Override
@@ -100,8 +106,10 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+
         getApplicationContext().bindService(i, sc, Context.BIND_AUTO_CREATE);
         getApplicationContext().startService(i);
+
         mainsender = new sendKeyCallback();
         nfc.setNdefPushMessageCallback(mainsender, this);
 
@@ -111,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         nfc.enableForegroundDispatch(this, pi, null, null);
-
         super.onResume();
     }
 
@@ -122,21 +129,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startKeyExchange(Intent intent) throws JSONException, IOException, FormatException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException {
+        Log.d("TAG", "KEY EXCHANGE STARTED");
 
         String userdata = new String(((NdefMessage)intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)[0])
                 .getRecords()[0]
                 .getPayload());
+
+        userdata = userdata.substring(3);
         JSONObject js = new JSONObject(userdata);
 
-
             String key = js.getString("key");
-            key.replace("-----BEGIN PUBLIC KEY-----", "");
-            key.replace("-----END PUBLIC KEY-----", "");
-            byte[] bytelist = Base64.decode(key, 0);
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(bytelist);
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-            RSAPublicKey finalkey = (RSAPublicKey)kf.generatePublic(spec);
-            certbind.storePublicKey(js.getString("user"), finalkey);
+            key = key.replace("-----BEGIN PUBLIC KEY-----", "");
+            key = key.replace("\n-----END PUBLIC KEY-----", "");
+            Log.d("TAG", key);
+            certbind.storePublicKey(js.getString("user"), key);
+            TextView decryp = findViewById(R.id.decrypted);
+            decryp.setText("KEY EXCHANGED");
             lastUserKeyExchanged = js.getString("user");
 
         //lastUserKeyExchanged = username;
@@ -150,6 +158,8 @@ public class MainActivity extends AppCompatActivity {
         String userdata = new String(((NdefMessage)intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)[0])
                 .getRecords()[0]
                 .getPayload());
+
+        userdata = userdata.substring(3);
         JSONObject js = new JSONObject(userdata);
         String message = js.getString("message");
         message = decryptString(message);
@@ -163,10 +173,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-        Log.d("TAG", "IN ON NEW INTENT");
-        if(inkeymode) {
 
+        if(inkeymode) {
             if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()) || NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
+
+
                 try {
                     startKeyExchange(intent);
                 } catch (JSONException e) {
@@ -221,22 +232,43 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public NdefMessage createNdefMessage(NfcEvent event) {
+            Log.d("TAG", "SENDING NDEF");
             if(inkeymode) {
-                StringWriter sw = new StringWriter();
-                String encodedString = "-----BEGIN PUBLIC KEY-----" +
-                        Base64.encodeToString(certbind.getMyKeyPair().getPublic().getEncoded(), 0) + "" +
-                        "-----END PUBLIC KEY-----";
-                final JSONObject mykeyinfo = new JSONObject();
+                Log.d("TAG", "SENDING NDEF 2");
+                X509EncodedKeySpec spec = null;
+                String keystring = null;
                 try {
-                    mykeyinfo.put("user", "jackson");
-                    mykeyinfo.put("key", encodedString);
-                } catch (JSONException e) {
+                    KeyFactory fact = KeyFactory.getInstance("RSA");
+                    Log.d("TAG", "SENDING NDEF 3");
+                    spec = fact.getKeySpec(certbind.getMyKeyPair().getPublic(), X509EncodedKeySpec.class);
+                    Log.d("TAG", "SENDING NDEF 4");
+                    keystring = Base64.encodeToString(spec.getEncoded(), Base64.DEFAULT);
+
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (InvalidKeySpecException e) {
                     e.printStackTrace();
                 }
 
-                final NdefRecord textrec = NdefRecord.createTextRecord(null, mykeyinfo.toString());
+                String encodedString = String.format("-----BEGIN PUBLIC KEY-----%s-----END PUBLIC KEY-----", keystring);
+
+
+                final JSONObject mykeyinfo = new JSONObject();
+                try {
+                    mykeyinfo.put("user", name);
+                    mykeyinfo.put("key", encodedString);
+                } catch (JSONException e) {
+
+                    e.printStackTrace();
+                }
+                Log.d("TAG", mykeyinfo.toString());
+                String save = mykeyinfo.toString();
+                final NdefRecord textrec = NdefRecord.createTextRecord(null, save);
+                        //mykeyinfo.toString());
                 final NdefRecord apprec = NdefRecord.createApplicationRecord(getPackageName());
                 final NdefMessage n = new NdefMessage(new NdefRecord[]{textrec, apprec});
+                Log.d("TAG", "SENT");
+
                 return n;
             }
             else if(lastUserKeyExchanged != null)
@@ -266,23 +298,26 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 } catch (KeyStoreException e) {
                     e.printStackTrace();
+                } catch (InvalidKeySpecException e) {
+                    e.printStackTrace();
                 }
                 final JSONObject mykeyinfo = new JSONObject();
                 try {
                     mykeyinfo.put("to", lastUserKeyExchanged);
-                    mykeyinfo.put("from", "jackson");
+                    mykeyinfo.put("from", name);
                     mykeyinfo.put("message", encodedString);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
-                final NdefRecord textrec = NdefRecord.createTextRecord(null, mykeyinfo.toString());
+                String save = mykeyinfo.toString();
+                final NdefRecord textrec = NdefRecord.createTextRecord(null, save);
                 final NdefRecord apprec = NdefRecord.createApplicationRecord(getPackageName());
                 final NdefMessage n = new NdefMessage(new NdefRecord[]{textrec, apprec});
                 return n;
             }
             else
             {
+                Log.d("TEST", "COULDN'T CREATE NDEF MESSAGE, PROBABLY NO LASTUSER");
                 return null;
             }
         }
@@ -290,7 +325,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public String encryptString(String s, String username) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidAlgorithmParameterException, UnsupportedEncodingException, UnrecoverableKeyException, KeyStoreException {
+    public String encryptString(String s, String username) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidAlgorithmParameterException, UnsupportedEncodingException, UnrecoverableKeyException, KeyStoreException, InvalidKeySpecException {
         Cipher cip = Cipher.getInstance("RSA/ECB/NoPadding");
         cip.init(Cipher.ENCRYPT_MODE, certbind.getPublicKey(username));
         byte[] e = cip.doFinal(s.getBytes("UTF-8"));
@@ -315,7 +350,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             inkeymode = !inkeymode;
+            if(inkeymode == true)
+            {
+                changemode.setText("KEY EXCHANGE MODE");
+            }
+            else
+            {
+                changemode.setText("MESSAGE EXCHANGE MODE");
+            }
         }
+    }
+
+    public void submitName(View v)
+    {
+        TextView textname = findViewById(R.id.editTextName);
+        name = textname.getText().toString();
+
     }
 
 
