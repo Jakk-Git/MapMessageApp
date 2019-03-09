@@ -109,12 +109,15 @@ public class CertificateService extends Service {
     }
 
     void storePublicKey(String partnerName, String key) throws KeyStoreException {
+
+        Log.d("TEST1", key);
         preferences.edit().putString(partnerName, key).commit();
+
     }
 
     RSAPublicKey getPublicKey(String partnerName) throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, UnsupportedEncodingException {
         String key = new String();
-        preferences.getString(partnerName, key);
+        key = preferences.getString(partnerName, "ERROR");
         byte[] bytelist = Base64.decode(key.getBytes("UTF-8"), 0);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(bytelist);
         KeyFactory kf = KeyFactory.getInstance("RSA");
