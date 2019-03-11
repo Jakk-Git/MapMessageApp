@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
     CertificateService certbind = new CertificateService();
     NfcAdapter nfc;
     SharedPreferences preferences;
-    final String NAME_OF_USER = "aslfnaklrjgnogkgb;flkgmh";
     Button changemode;
     Boolean inkeymode = true;
     TextView displayText;
@@ -73,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     sendKeyCallback mainsender;
     String lastUserKeyExchanged;
     String name = "DEFAULT";
-    KeyPair mykeypair;
 
 
 

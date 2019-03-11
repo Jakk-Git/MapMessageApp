@@ -1,12 +1,15 @@
 package edu.temple.mapmessageapp;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,7 +39,7 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
         }
     }
 
-    public PersonListAdapter(Partner[] personlist, Context activitycontext)
+    public PersonListAdapter(Partner[] personlist, Activity activitycontext)
     {
         this.personlist = personlist;
         this.activitycontext = activitycontext;
@@ -70,6 +73,15 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
                     @Override
                     public void onClick(View view) {
                         MapListActivity tempcallactivity = (MapListActivity) activitycontext;
+                        if(!tempcallactivity.preferences.getString(personlist[position].name, "false").equals("false"))
+                        {
+                            Intent i = new Intent(activitycontext, ChatActivity.class);
+                            tempcallactivity.startActivity(i);
+                        }
+                        else
+                        {
+                            Toast.makeText(tempcallactivity, "You haven't added this person!", Toast.LENGTH_SHORT).show();
+                        }
                         //put stuff here
                         //
                         //

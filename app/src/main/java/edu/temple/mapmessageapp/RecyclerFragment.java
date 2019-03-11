@@ -55,7 +55,7 @@ public class RecyclerFragment extends Fragment {
     public void updateRecycler(Partner[] partnerlist)
     {
         if(rv != null) {
-            PersonListAdapter personList = new PersonListAdapter(partnerlist, getContext());
+            PersonListAdapter personList = new PersonListAdapter(partnerlist, getActivity());
             LinearLayoutManager llm = new LinearLayoutManager(getContext());
             rv.setAdapter(personList);
             rv.setLayoutManager(llm);
