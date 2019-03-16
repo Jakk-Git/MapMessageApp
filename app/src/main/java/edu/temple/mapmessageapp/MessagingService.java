@@ -17,9 +17,9 @@ public class MessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
         Intent messageIntent = new Intent(CHAT_APP_MESSAGE_ACTION);
-        messageIntent.putExtra("message", remoteMessage.getData().get("message"));
+        messageIntent.putExtra("message", remoteMessage.getData().get("payload"));
 
-        Log.d("Received message", remoteMessage.getData().get("message"));
+        Log.d("Received message", remoteMessage.getData().get("payload"));
 
 
         sendBroadcast(messageIntent);

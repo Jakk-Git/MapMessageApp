@@ -346,13 +346,8 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             currentmap.setMyLocationEnabled(true);
 
             locationmanager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            updateLocation();
-            //sending user data to server
-            if (hasusername) {
-                sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
-            }
-            double lat = location.getLatitude();
-            double lng = location.getLongitude();
+
+
             locationmanager.requestLocationUpdates(
                     locationmanager.getBestProvider(new Criteria(), false)
                     , 0, 10, new LocationListener() {
@@ -379,6 +374,13 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
                             //do nothing
                         }
                     });
+            updateLocation();
+            //sending user data to server
+            if (hasusername) {
+                sendUserDataToServer((preferences.getString(NAME_OF_USER, "NOT_A_USERNAME")));
+            }
+            double lat = location.getLatitude();
+            double lng = location.getLongitude();
             LatLng coordinate = new LatLng(lat, lng);
 
             CameraUpdate zoom = CameraUpdateFactory.newLatLngZoom(coordinate, 15);
@@ -388,7 +390,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
     }
 
     public void updateLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -399,6 +401,10 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             return;
         }
         location = locationmanager.getLastKnownLocation(locationmanager.getBestProvider(new Criteria(), false));
+        if(location == null)
+        {
+            location = locationmanager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
     }
 
     public void createTimer()
@@ -547,9 +553,8 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         key = key.replace("\n-----END PUBLIC KEY-----", "");
         Log.d("TAG", key);
         certbind.storePublicKey(js.getString("user"), key);
-        TextView decryp = findViewById(R.id.decrypted);
-        decryp.setText("KEY EXCHANGED");
         lastUserKeyExchanged = js.getString("user");
+        Toast.makeText(this, "Got user key!", Toast.LENGTH_SHORT).show();
 
         //lastUserKeyExchanged = username;
 

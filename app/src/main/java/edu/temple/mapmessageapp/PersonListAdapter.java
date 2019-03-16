@@ -76,6 +76,7 @@ public class PersonListAdapter extends RecyclerView.Adapter<PersonListAdapter.My
                         if(!tempcallactivity.preferences.getString(personlist[position].name, "false").equals("false"))
                         {
                             Intent i = new Intent(activitycontext, ChatActivity.class);
+                            i.putExtra("username", personlist[position].name);
                             tempcallactivity.startActivity(i);
                         }
                         else
