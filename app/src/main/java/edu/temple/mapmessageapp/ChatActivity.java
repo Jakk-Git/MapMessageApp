@@ -42,10 +42,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -130,8 +135,20 @@ public class ChatActivity extends AppCompatActivity {
                 try {
                     String messageinjson = intent.getExtras().getString("message");
                     JSONObject js = new JSONObject(messageinjson);
-                    if(js.getString("user").equals(partnername)) {
-                        messageList.add(new Message(decryptString(js.getString("message")), false));
+                    if(js.getString("from").equals(partnername)) {
+                        String finalmessage = js.getString("message");
+                        finalmessage = finalmessage.replace("==", "");
+
+
+                        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-4:00"));
+                        Date currentLocalTime = cal.getTime();
+                        DateFormat date = new SimpleDateFormat("HH:mm");
+                        date.setTimeZone(TimeZone.getTimeZone("GMT-4:00"));
+                        String localTime = date.format(currentLocalTime);
+
+
+                        messageList.add(new Message("" + decryptString(finalmessage) + " - " +
+                        localTime + " - " + partnername, false));
                         updateRecycler();
                     }
                 } catch (InvalidKeyException e) {

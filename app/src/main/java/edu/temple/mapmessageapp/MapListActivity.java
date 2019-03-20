@@ -270,6 +270,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
             }
         };
 
+
         final Map<String, String> firebaseinfo = new HashMap<>();
         firebaseinfo.put("user", name);
         firebaseinfo.put("token", FirebaseInstanceId.getInstance().getToken());
@@ -278,7 +279,7 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         StringRequest firebaseregister = new StringRequest(Request.Method.POST, "https://kamorris.com/lab/fcm_register.php", new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-
+                Log.d("Registered", response.toString());
             }
         }, new Response.ErrorListener() {
             @Override
@@ -288,12 +289,13 @@ public class MapListActivity extends AppCompatActivity implements OnMapReadyCall
         }) {
             @Override
             protected Map<String, String>getParams() throws AuthFailureError{
-                return data;
+                return firebaseinfo;
             }
         };
 
         if(FirebaseInstanceId.getInstance().getToken() != null)
         {
+            Log.d("TEST", firebaseinfo.toString());
             rq.add(firebaseregister);
         }
         else
